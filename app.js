@@ -169,6 +169,41 @@ app.delete('/api/groups/:groupId/member/:memberId', async (req, res) => {
 
 
 
+// Update a member's name or people count
+app.put('/api/groups/:groupId/member/:memberId/edit', async (req, res) => {
+  const { groupId, memberId } = req.params;
+  const { name, people } = req.body;
+
+  if (!name || typeof name !== 'string' || !people || typeof people !== 'number') {
+    return res.status(400).json({ message: 'Invalid input. "name" must be a string and "people" must be a number.' });
+  }
+
+  try {
+    const savedData = await SavedData.findOne();
+    if (!savedData) return res.status(404).json({ message: 'Saved data not found' });
+
+    const group = savedData.groups.id(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found' });
+
+    const member = group.members.id(memberId);
+    if (!member) return res.status(404).json({ message: 'Member not found' });
+
+    // Adjust group's sum
+    group.sum = group.sum - member.people + people;
+
+    // Update member fields
+    member.name = name;
+    member.people = people;
+
+    await savedData.save();
+    res.json({ message: 'Member updated successfully', member });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error while updating member' });
+  }
+});
+
+
 
 app.post('/api/saveData', async (req, res) => {
   const { groups, total_sum } = req.body;
