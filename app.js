@@ -37,6 +37,8 @@ const port = 8080;
 app.use(bodyParser.json());
 app.use(cors());
 
+
+
 // Get all groups and their members
 
 
@@ -51,25 +53,52 @@ app.get('/api/saveddatas', async (req, res) => {
   }
 });
 // Add new member to a group
+// Route to add a new member to a group
 app.post('/api/groups/:groupIndex/member', async (req, res) => {
   const { groupIndex } = req.params;
   const { name, people } = req.body;
 
-  try {
-    const group = await Group.findOne({ index: groupIndex });
+  // Validate input data
+  if (!name || typeof name !== 'string' || !people || typeof people !== 'number') {
+    return res.status(400).send({ message: 'Invalid data. "name" must be a string and "people" must be a number.' });
+  }
 
-    if (group) {
-      group.members.push({ name, people });
-      group.sum += people;
-      await group.save();
-      res.status(200).json(group);
-    } else {
-      res.status(404).send('Group not found');
+  try {
+    // Find the main SavedData document (assuming only one exists)
+    const savedData = await SavedData.findOne();
+    if (!savedData) {
+      return res.status(404).send({ message: 'SavedData not found' });
     }
+
+    // Find the group by index inside savedData.groups
+    const group = savedData.groups.find(group => group.index === groupIndex);
+    if (!group) {
+      return res.status(404).send({ message: 'Group not found' });
+    }
+
+    // Add new member
+    const newMember = {
+      name,
+      people,
+      isChecked: false
+    };
+    group.members.push(newMember);
+    group.sum += people;
+
+    // Update total_sum if needed
+    savedData.total_sum += people;
+
+    await savedData.save();
+
+    // Respond with the new member so frontend can update state
+    res.status(200).json(newMember);
   } catch (err) {
-    res.status(500).send(err);
+    console.error("Error adding member:", err);
+    res.status(500).send({ message: 'Error adding member', error: err });
   }
 });
+
+
 
 // Update the checkbox status of a member
 app.put('/api/groups/:groupId/member/:memberId', async (req, res) => {
@@ -109,6 +138,34 @@ app.put('/api/groups/:groupId/member/:memberId', async (req, res) => {
 
 
 
+// Delete a member from a group inside SavedData
+app.delete('/api/groups/:groupId/member/:memberId', async (req, res) => {
+  const { groupId, memberId } = req.params;
+
+  try {
+    const savedData = await SavedData.findOne();
+    if (!savedData) return res.status(404).send({ message: 'SavedData not found' });
+
+    const group = savedData.groups.find(group => group._id.toString() === groupId);
+    if (!group) return res.status(404).send({ message: 'Group not found' });
+
+    const memberIndex = group.members.findIndex(member => member._id.toString() === memberId);
+    if (memberIndex === -1) return res.status(404).send({ message: 'Member not found' });
+
+    const removedMember = group.members.splice(memberIndex, 1)[0];
+    group.sum -= removedMember.people;
+    savedData.total_sum -= removedMember.people;
+
+    await savedData.save();
+
+    res.status(200).json({ message: 'Member deleted successfully', member: removedMember });
+  } catch (err) {
+    console.error("Error deleting member:", err);
+    res.status(500).send({ message: 'Error deleting member', error: err });
+  }
+});
+
+
 
 
 
@@ -134,6 +191,25 @@ app.post('/api/saveData', async (req, res) => {
 });
 
 
+app.post('/api/groups/:groupIndex/member', async (req, res) => {
+  const { groupIndex } = req.params;
+  const { name, people } = req.body;
+
+  try {
+    const group = await Group.findOne({ index: groupIndex });
+
+    if (group) {
+      group.members.push({ name, people });
+      group.sum += people;
+      await group.save();
+      res.status(200).json(group);
+    } else {
+      res.status(404).send('Group not found');
+    }
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
 
 
 
