@@ -35,13 +35,7 @@ const port = 8080;
 
 
 app.use(bodyParser.json());
-app.use(
-  cors({
-    origin: ["https://project-frontend-1-l7j9.onrender.com/"], // remove "/" from end
-    credentials: true
-  })
-);
-
+app.use(cors());
 
 // Get all groups and their members
 
