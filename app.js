@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 require("dotenv").config();
 
 const savedDataRoutes = require('./routes/savedDataRoutes');
+const savedDataRoutes1 = require('./routes/savedDataRoutesnikah');
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -24,6 +25,7 @@ mongoose.connect(mongoURI, {
 
 // Routes
 app.use('/api', savedDataRoutes);
+app.use('/apii', savedDataRoutes1);
 
 // Start server
 app.listen(port, () => {

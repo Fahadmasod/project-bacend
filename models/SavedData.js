@@ -17,6 +17,17 @@ const savedDataSchema = new mongoose.Schema({
   total_sum: Number
 });
 
-const SavedData = mongoose.model('SavedData', savedDataSchema);
+const savedDataSchema1 = new mongoose.Schema({
+  groups: [groupSchema],
+  total_sum: Number
+});
 
-module.exports = SavedData;
+// Two different collections
+const SavedData = mongoose.model('SavedData', savedDataSchema);   // → Collection: saveddatas
+const SavedData1 = mongoose.model('SavedData1', savedDataSchema1); // → Collection: saveddata1
+
+// ✅ Export both
+module.exports = {
+  SavedData,
+  SavedData1
+};

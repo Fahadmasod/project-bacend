@@ -1,27 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const {SavedData} = require('../models/SavedData');
+const  {SavedData11} = require('../models/SavedData');
 
-// GET all saved data
-router.get('/saveddatas', async (req, res) => {
-    const start = Date.now();
-    try {
-      const groups = await SavedData.find().lean();
-    
-      res.json(groups);
-    } catch (err) {
-      res.status(500).send(err);
-    }
-  });
-  
+router.get('/SavedData1', async (req, res) => {
+  try {
+    const data = await SavedData11.find();
+    console.log("data")
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 // POST new data
 router.post('/saveData', async (req, res) => {
   const { groups, total_sum } = req.body;
   try {
-    const savedData = new SavedData({ groups, total_sum });
-    await savedData.save();
-    res.status(201).json({ message: 'Data saved successfully!', data: savedData });
+    const SavedData1 = new SavedData11({ groups, total_sum });
+    await SavedData1.save();
+    res.status(201).json({ message: 'Data saved successfully!', data: SavedData1 });
   } catch (error) {
     res.status(500).json({ message: 'Error saving data', error });
   }
@@ -40,18 +39,18 @@ router.post('/groups/:groupIndex/member', async (req, res) => {
   }
 
   try {
-    const savedData = await SavedData.findOne();
-    if (!savedData) return res.status(404).send({ message: 'SavedData not found' });
+    const SavedData1 = await SavedData11.findOne();
+    if (!SavedData1) return res.status(404).send({ message: 'SavedData1 not found' });
 
-    const group = savedData.groups.find(g => g.index === groupIndex);
+    const group = SavedData1.groups.find(g => g.index === groupIndex);
     if (!group) return res.status(404).send({ message: 'Group not found' });
 
     const newMember = { name, people, isChecked: false };
     group.members.push(newMember);
     group.sum += people;
-    savedData.total_sum += people;
+    SavedData1.total_sum += people;
 
-    await savedData.save();
+    await SavedData1.save();
     res.status(200).json(newMember);
   } catch (err) {
     res.status(500).send({ message: 'Error adding member', error: err });
@@ -61,17 +60,17 @@ router.post('/groups/:groupIndex/member', async (req, res) => {
 // Update isChecked status
 router.put('/groups/:groupId/member/:memberId', async (req, res) => {
   try {
-    const savedData = await SavedData.findOne();
-    if (!savedData) return res.status(404).send('SavedData not found');
+    const SavedData1 = await SavedData11.findOne();
+    if (!SavedData1) return res.status(404).send('SavedData1 not found');
 
-    const group = savedData.groups.id(req.params.groupId);
+    const group = SavedData1.groups.id(req.params.groupId);
     if (!group) return res.status(404).send('Group not found');
 
     const member = group.members.id(req.params.memberId);
     if (!member) return res.status(404).send('Member not found');
 
     member.isChecked = !member.isChecked;
-    await savedData.save();
+    await SavedData1.save();
 
     res.status(200).json(member);
   } catch (err) {
@@ -87,10 +86,10 @@ router.put('/groups/:groupId/member/:memberId/edit', async (req, res) => {
   }
 
   try {
-    const savedData = await SavedData.findOne();
-    if (!savedData) return res.status(404).json({ message: 'Saved data not found' });
+    const SavedData11 = await SavedData11.findOne();
+    if (!SavedData11) return res.status(404).json({ message: 'Saved data not found' });
 
-    const group = savedData.groups.id(req.params.groupId);
+    const group = SavedData11.groups.id(req.params.groupId);
     const member = group?.members.id(req.params.memberId);
     if (!group || !member) return res.status(404).json({ message: 'Group or member not found' });
 
@@ -98,7 +97,7 @@ router.put('/groups/:groupId/member/:memberId/edit', async (req, res) => {
     member.name = name;
     member.people = people;
 
-    await savedData.save();
+    await SavedData11.save();
     res.json({ message: 'Member updated successfully', member });
   } catch (err) {
     res.status(500).json({ message: 'Server error while updating member', error: err });
@@ -108,23 +107,24 @@ router.put('/groups/:groupId/member/:memberId/edit', async (req, res) => {
 // Delete member
 router.delete('/groups/:groupId/member/:memberId', async (req, res) => {
   try {
-    const savedData = await SavedData.findOne();
-    const group = savedData?.groups.id(req.params.groupId);
+    const SavedData1 = await SavedData11.findOne();
+    const group = SavedData1?.groups.id(req.params.groupId);
     const memberIndex = group?.members.findIndex(m => m._id.toString() === req.params.memberId);
 
-    if (!savedData || !group || memberIndex === -1) {
+    if (!SavedData1 || !group || memberIndex === -1) {
       return res.status(404).send({ message: 'Group or Member not found' });
     }
 
     const removedMember = group.members.splice(memberIndex, 1)[0];
     group.sum -= removedMember.people;
-    savedData.total_sum -= removedMember.people;
+    SavedData1.total_sum -= removedMember.people;
 
-    await savedData.save();
+    await SavedData1.save();
     res.json({ message: 'Member deleted successfully', member: removedMember });
   } catch (err) {
     res.status(500).json({ message: 'Error deleting member', error: err });
   }
 });
+
 
 module.exports = router;
